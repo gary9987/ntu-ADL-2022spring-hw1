@@ -1,0 +1,3 @@
+2022-02-21 19:32:19 | INFO | Token covered: 5435 / 6491 = 0.8373132028963179
+2022-02-21 19:32:19 | INFO | Embedding shape: torch.Size([6491, 300])
+2022-02-21 19:32:19 | INFO | Embedding saved at /tmp/pycharm_project_32/cache/intent/embeddings.pt

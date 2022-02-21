@@ -139,7 +139,7 @@ def main(args):
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
                 valid_loss_min,
                 valid_loss))
-            torch.save(net.state_dict(), str(args.ckpt_dir) + 'best.pt')
+            torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
             valid_loss_min = valid_loss
 
     # TODO: Inference on test set
