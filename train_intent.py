@@ -38,12 +38,12 @@ def main(args):
         split: SeqClsDataset(split_data, vocab, intent2idx, args.max_len)
         for split, split_data in data.items()
     }
-    # TODO: crecate DataLoader for train / dev datasets
+    # crecate DataLoader for train / dev datasets
     trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=args.batch_size, shuffle=True, num_workers=2, drop_last=True)
     validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=False, num_workers=2, drop_last=True)
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
-    # TODO: init model and move model to target device(cpu / gpu)
+    # init model and move model to target device(cpu / gpu)
     model = SeqClassifier(embeddings, hidden_size=args.hidden_size,
                           num_layers=args.num_layers,
                           dropout=args.dropout,
@@ -55,7 +55,7 @@ def main(args):
     net = model.to(device)
     print(net)
 
-    # TODO: init optimizer
+    # init optimizer
     optimizer = optim.Adam(net.parameters())
     criterion = nn.CrossEntropyLoss()
 
@@ -124,8 +124,6 @@ def main(args):
             valid_loss += loss.item() * data.size(0)
 
         # calculate average losses
-        # train_losses.append(train_loss/len(train_loader.dataset))
-        # valid_losses.append(valid_loss.item()/len(valid_loader.dataset)
         train_loss = train_loss / len(trainloader.dataset.data)
         valid_loss = valid_loss / len(validloader.dataset.data)
         train_correct = 100. * train_correct / len(trainloader.dataset.data)
