@@ -48,7 +48,7 @@ def main(args):
                           num_layers=args.num_layers,
                           dropout=args.dropout,
                           bidirectional=args.bidirectional,
-                          num_class=len(intent2idx),
+                          num_class=datasets['train'].num_classes,
                           max_len=args.max_len)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -171,12 +171,12 @@ def parse_args() -> Namespace:
 
     # model
     parser.add_argument("--hidden_size", type=int, default=512)
-    parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=1e-4)
 
     # data loader
     parser.add_argument("--batch_size", type=int, default=128)

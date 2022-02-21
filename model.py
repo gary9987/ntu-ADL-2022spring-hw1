@@ -40,9 +40,6 @@ class SeqClassifier(torch.nn.Module):
     def forward(self, x):
         x = self.embed(x)
         states, (h, c) = self.lstm(x)
-        #encodings = torch.cat([states[:, 0, :], states[:, -1, :]], dim=1)
-        #encodings = torch.cat([states[:, i, :] for i in range(states.shape[1])], dim=1)
-        #outputs = self.drop(encodings))
         outputs = torch.cat([states[:, 0, :], states[:, -1, :]], dim=1)
         outputs = self.relu(self.linear1(outputs))
         outputs = self.drop(outputs)
