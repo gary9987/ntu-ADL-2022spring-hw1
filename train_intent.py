@@ -39,8 +39,8 @@ def main(args):
         for split, split_data in data.items()
     }
     # crecate DataLoader for train / dev datasets
-    trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=args.batch_size, shuffle=True, num_workers=2, drop_last=True)
-    validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=False, num_workers=2, drop_last=True)
+    trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=args.batch_size, shuffle=True, num_workers=2)
+    validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=False, num_workers=2)
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
     # init model and move model to target device(cpu / gpu)
