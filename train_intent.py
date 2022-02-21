@@ -72,9 +72,8 @@ def main(args):
         # train the model #
         ###################
         net.train()
-        cot = 0
+
         for data, target in trainloader:
-            cot += 1
             # move tensors to GPU if CUDA is available
             data, target = data.cuda().long(), target.cuda()
 
@@ -140,7 +139,7 @@ def main(args):
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
                 valid_loss_min,
                 valid_loss))
-            torch.save(net.state_dict(), checkpoint_path + 'model.pth')
+            torch.save(net.state_dict(), str(args.ckpt_dir) + 'best.pt')
             valid_loss_min = valid_loss
 
     # TODO: Inference on test set

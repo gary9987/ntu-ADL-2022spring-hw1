@@ -30,10 +30,15 @@ class SeqClsDataset(Dataset):
     def __getitem__(self, index):
         instance = self.data[index]
         str = instance['text']
-        label = instance['intent']
+        try:
+            label = instance['intent']
+            label = self.label2idx(label)
+        except:
+            label = ""
+
         encoding = self.vocab.encode_batch([str], to_len=self.max_len)
         encoding = torch.FloatTensor(encoding).view(-1)
-        return torch.FloatTensor(encoding), self.label2idx(label)
+        return torch.FloatTensor(encoding), label
 
     @property
     def num_classes(self) -> int:

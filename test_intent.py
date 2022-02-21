@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import Dict
 
 import torch
+import torch.utils.data
 
 from dataset import SeqClsDataset
 from model import SeqClassifier
 from utils import Vocab
-
+import csv
 
 def main(args):
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
@@ -20,7 +21,9 @@ def main(args):
 
     data = json.loads(args.test_file.read_text())
     dataset = SeqClsDataset(data, vocab, intent2idx, args.max_len)
+
     # TODO: crecate DataLoader for test dataset
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
 
@@ -31,15 +34,39 @@ def main(args):
         args.dropout,
         args.bidirectional,
         dataset.num_classes,
+        args.max_len
     )
     model.eval()
 
     ckpt = torch.load(args.ckpt_path)
     # load weights into model
+    model.load_state_dict(ckpt)
+    model.to(args.device)
 
+    pred_list = []
     # TODO: predict dataset
+    for data, _ in dataloader:
+        # move tensors to GPU if CUDA is available
+        data = data.cuda().long()
+        # forward pass: compute predicted outputs by passing inputs to the model
+        output = model(data)
+
+        # select the class with highest probability
+        _, pred = output.max(1)
+        pred_list += [p.item() for p in pred]
 
     # TODO: write prediction to file (args.pred_file)
+
+    print(args.pred_file)
+    with open(args.pred_file, 'w') as file:
+        writer = csv.writer(file)
+        writer.writerow(['id', 'intent'])
+        cot = 0
+        for i in pred_list:
+            label = dataset.idx2label(i)
+            writer.writerow(['test-' + str(cot), label])
+            cot += 1
+
 
 
 def parse_args() -> Namespace:
