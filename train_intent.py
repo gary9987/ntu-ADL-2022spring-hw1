@@ -56,8 +56,10 @@ def main(args):
     print(net)
 
     # init optimizer
-    optimizer = optim.Adam(net.parameters())
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[i for i in range(5, 100, 10)], gamma=0.1)
     criterion = nn.CrossEntropyLoss()
+
 
     valid_loss_min = np.Inf
     epoch_pbar = trange(args.num_epoch, desc="Epoch")
@@ -67,6 +69,7 @@ def main(args):
         valid_correct = 0
         train_loss = 0.0
         valid_loss = 0.0
+
         print('running epoch: {}'.format(epoch))
         ###################
         # train the model #
@@ -142,6 +145,8 @@ def main(args):
             torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
             valid_loss_min = valid_loss
 
+        scheduler.step()
+
     # TODO: Inference on test set
 
 
@@ -167,19 +172,19 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=56)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=1024)
+    parser.add_argument("--hidden_size", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=4)
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--dropout", type=float, default=0.4)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=512)
+    parser.add_argument("--batch_size", type=int, default=256)
 
     # training
     parser.add_argument(

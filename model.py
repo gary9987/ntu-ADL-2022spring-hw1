@@ -23,27 +23,19 @@ class SeqClassifier(torch.nn.Module):
                             num_layers=num_layers, bidirectional=bidirectional,
                             dropout=dropout, batch_first=True)
 
-        self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1) * 2, hidden_size)
-        self.relu = nn.ReLU()
         self.drop = nn.Dropout(dropout)
-        self.linear2 = nn.Linear(hidden_size, num_class)
+        self.linear1 = nn.Linear(hidden_size * 4, num_class)
+        self.relu = nn.ReLU()
 
     @property
     def encoder_output_size(self) -> int:
         # TODO: calculate the output dimension of rnn
         raise NotImplementedError
 
-    '''
-    def forward(self, batch) -> Dict[str, torch.Tensor]:
-        # TODO: implement model forward
-        raise NotImplementedError
-    '''
-
     def forward(self, x):
         x = self.embed(x)
         states, (h, c) = self.lstm(x)
-        outputs = torch.cat([states[:, 0, :], states[:, -1, :]], dim=1)
-        outputs = self.relu(self.linear1(outputs))
+        outputs = torch.cat([states[:, 0, :], torch.flip(states[:, -1, :], [1])], dim=1)
         outputs = self.drop(outputs)
-        outputs = self.linear2(outputs)
+        outputs = self.relu(self.linear1(outputs))
         return outputs
