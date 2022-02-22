@@ -23,7 +23,8 @@ def main(args):
     dataset = SeqClsDataset(data, vocab, intent2idx, args.max_len)
 
     # TODO: crecate DataLoader for test dataset
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2,
+                                             collate_fn=dataset.collate_fn)
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
 
@@ -45,11 +46,11 @@ def main(args):
 
     pred_list = []
     # TODO: predict dataset
-    for data, _ in dataloader:
+    for package in dataloader:
         # move tensors to GPU if CUDA is available
-        data = data.cuda().long()
+        data = package['tensor'].cuda()
         # forward pass: compute predicted outputs by passing inputs to the model
-        output = model(data)
+        output = model(data)['outputs']
 
         # select the class with highest probability
         _, pred = output.max(1)
@@ -96,12 +97,12 @@ def parse_args() -> Namespace:
 
     # model
     parser.add_argument("--hidden_size", type=int, default=512)
-    parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=256)
 
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"

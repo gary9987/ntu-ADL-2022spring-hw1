@@ -36,10 +36,12 @@ class SeqClsDataset(Dataset):
 
         batch_str = []
         for sam in samples:
-
-            label = sam['intent']
-            label = self.label2idx(label)
-            label_list.append(label)
+            try:
+                label = sam['intent']
+                label = self.label2idx(label)
+                label_list.append(label)
+            except:
+                pass
             batch_str.append(sam['text'])
 
         encoding_list = self.vocab.encode_batch(batch_str, to_len=self.max_len)
