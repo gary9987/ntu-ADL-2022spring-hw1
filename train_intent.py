@@ -170,7 +170,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=128)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=1024)
     parser.add_argument("--num_layers", type=int, default=4)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--bidirectional", type=bool, default=True)
@@ -179,7 +179,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--lr", type=float, default=1e-4)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=512)
 
     # training
     parser.add_argument(
