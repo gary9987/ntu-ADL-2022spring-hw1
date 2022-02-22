@@ -22,32 +22,32 @@ class SeqClsDataset(Dataset):
     def __len__(self) -> int:
         return len(self.data)
 
-    '''
     def __getitem__(self, index) -> Dict:
-    instance = self.data[index]
-    return instance
-    '''
-    def __getitem__(self, index):
         instance = self.data[index]
-        str = instance['text']
-        try:
-            label = instance['intent']
-            label = self.label2idx(label)
-        except:
-            label = ""
-
-        encoding = self.vocab.encode_batch([str], to_len=self.max_len)
-        encoding = torch.FloatTensor(encoding).view(-1)
-        return torch.FloatTensor(encoding), label
+        return instance
 
     @property
     def num_classes(self) -> int:
         return len(self.label_mapping)
-    '''
+
     def collate_fn(self, samples: List[Dict]) -> Dict:
         # TODO: implement collate_fn
-        raise NotImplementedError
-    '''
+        label_list = []
+
+        batch_str = []
+        for sam in samples:
+
+            label = sam['intent']
+            label = self.label2idx(label)
+            label_list.append(label)
+            batch_str.append(sam['text'])
+
+        encoding_list = self.vocab.encode_batch(batch_str, to_len=self.max_len)
+        encoding_list = torch.LongTensor(encoding_list)
+        label_list = torch.LongTensor(label_list)
+
+        return {'tensor': encoding_list, 'label': label_list}
+
     def label2idx(self, label: str):
         return self.label_mapping[label]
 

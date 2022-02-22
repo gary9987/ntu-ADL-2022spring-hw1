@@ -32,10 +32,10 @@ class SeqClassifier(torch.nn.Module):
         # TODO: calculate the output dimension of rnn
         raise NotImplementedError
 
-    def forward(self, x):
+    def forward(self, x) -> Dict[str, torch.Tensor]:
         x = self.embed(x)
-        states, (h, c) = self.lstm(x)
+        states, _ = self.lstm(x)
         outputs = torch.cat([states[:, 0, :], torch.flip(states[:, -1, :], [1])], dim=1)
         outputs = self.drop(outputs)
         outputs = self.relu(self.linear1(outputs))
-        return outputs
+        return {'outputs': outputs}

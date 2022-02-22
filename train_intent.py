@@ -39,8 +39,10 @@ def main(args):
         for split, split_data in data.items()
     }
     # crecate DataLoader for train / dev datasets
-    trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=args.batch_size, shuffle=True, num_workers=2)
-    validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=False, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=args.batch_size, shuffle=True, num_workers=2
+                                              , collate_fn=datasets['train'].collate_fn)
+    validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=False, num_workers=2
+                                              , collate_fn=datasets['eval'].collate_fn)
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
     # init model and move model to target device(cpu / gpu)
@@ -53,13 +55,11 @@ def main(args):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     net = model.to(device)
-    print(net)
 
     # init optimizer
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[i for i in range(5, 100, 10)], gamma=0.1)
     criterion = nn.CrossEntropyLoss()
-
 
     valid_loss_min = np.Inf
     epoch_pbar = trange(args.num_epoch, desc="Epoch")
@@ -76,14 +76,16 @@ def main(args):
         ###################
         net.train()
 
-        for data, target in trainloader:
+        for package in trainloader:
             # move tensors to GPU if CUDA is available
-            data, target = data.cuda().long(), target.cuda()
+            data = package['tensor']
+            target = package['label']
+            data, target = data.cuda(), target.cuda()
 
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
-            output = net(data)
+            output = net(data)['outputs']
 
             # select the class with highest probability
             _, pred = output.max(1)
@@ -106,12 +108,14 @@ def main(args):
         # validate the model #
         ######################
         net.eval()
-        for data, target in validloader:
-            # move tensors to GPU if CUDA is available
+        for package in validloader:
 
-            data, target = data.cuda().long(), target.cuda()
+            data = package['tensor']
+            target = package['label']
+            # move tensors to GPU if CUDA is available
+            data, target = data.cuda(), target.cuda()
             # forward pass: compute predicted outputs by passing inputs to the model
-            output = net(data)
+            output = net(data)['outputs']
 
             # select the class with highest probability
             _, pred = output.max(1)
