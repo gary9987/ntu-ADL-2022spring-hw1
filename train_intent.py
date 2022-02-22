@@ -19,9 +19,10 @@ from model import SeqClassifier
 TRAIN = "train"
 DEV = "eval"
 SPLITS = [TRAIN, DEV]
-
+torch.manual_seed(0)
 
 def main(args):
+
     checkpoint_path = './checkpoint/intent/'
     Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
 
@@ -39,9 +40,9 @@ def main(args):
         for split, split_data in data.items()
     }
     # crecate DataLoader for train / dev datasets
-    trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=args.batch_size, shuffle=True, num_workers=2
+    trainloader = torch.utils.data.DataLoader(datasets['train'], batch_size=args.batch_size, shuffle=True, num_workers=4
                                               , collate_fn=datasets['train'].collate_fn)
-    validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=False, num_workers=2
+    validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=True, num_workers=4
                                               , collate_fn=datasets['eval'].collate_fn)
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
@@ -58,7 +59,7 @@ def main(args):
 
     # init optimizer
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[i for i in range(5, 100, 10)], gamma=0.1)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=3)
     criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
@@ -176,12 +177,12 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=56)
+    parser.add_argument("--max_len", type=int, default=128)
 
     # model
     parser.add_argument("--hidden_size", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=4)
-    parser.add_argument("--dropout", type=float, default=0.4)
+    parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
