@@ -51,8 +51,7 @@ def main(args):
                           num_layers=args.num_layers,
                           dropout=args.dropout,
                           bidirectional=args.bidirectional,
-                          num_class=datasets['train'].num_classes,
-                          max_len=args.max_len)
+                          num_class=datasets['train'].num_classes)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     net = model.to(device)

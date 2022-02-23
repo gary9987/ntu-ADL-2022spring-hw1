@@ -22,7 +22,7 @@ def main(args):
     data = json.loads(args.test_file.read_text())
     dataset = SeqClsDataset(data, vocab, intent2idx, args.max_len)
 
-    # TODO: crecate DataLoader for test dataset
+    # Crecate DataLoader for test dataset
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2,
                                              collate_fn=dataset.collate_fn)
 
@@ -34,8 +34,7 @@ def main(args):
         args.num_layers,
         args.dropout,
         args.bidirectional,
-        dataset.num_classes,
-        args.max_len
+        dataset.num_classes
     )
     model.eval()
 
@@ -45,7 +44,7 @@ def main(args):
     model.to(args.device)
 
     pred_list = []
-    # TODO: predict dataset
+    # Predict dataset
     for package in dataloader:
         # move tensors to GPU if CUDA is available
         data = package['tensor'].cuda()
@@ -56,7 +55,7 @@ def main(args):
         _, pred = output.max(1)
         pred_list += [p.item() for p in pred]
 
-    # TODO: write prediction to file (args.pred_file)
+    # Write prediction to file (args.pred_file)
 
     print(args.pred_file)
     with open(args.pred_file, 'w') as file:

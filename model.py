@@ -14,18 +14,16 @@ class SeqClassifier(torch.nn.Module):
             dropout: float,
             bidirectional: bool,
             num_class: int,
-            max_len: int
     ) -> None:
         super(SeqClassifier, self).__init__()
         self.embed = Embedding.from_pretrained(embeddings, freeze=False)
-        # TODO: model architecture
         self.rnn = nn.GRU(input_size=embeddings.shape[1], hidden_size=hidden_size,
                           num_layers=num_layers, bidirectional=bidirectional,
                           dropout=dropout, batch_first=True)
 
         self.drop = nn.Dropout(dropout)
-        self.bn1 = nn.BatchNorm1d(num_features=hidden_size * (2 if bidirectional else 1) * 4)
-        self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1) * 4, 512)
+        self.bn1 = nn.BatchNorm1d(num_features=hidden_size * (2 if bidirectional else 1) * num_layers)
+        self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1) * num_layers, 512)
         self.bn2 = nn.BatchNorm1d(512)
         self.linear2 = nn.Linear(512, num_class)
         self.relu = nn.ReLU()
