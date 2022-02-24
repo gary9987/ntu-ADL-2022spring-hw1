@@ -32,8 +32,8 @@ class SeqClsDataset(Dataset):
 
     def collate_fn(self, samples: List[Dict]) -> Dict:
         label_list = []
-
         batch_str = []
+        id_list = []
         for sam in samples:
             try:
                 label = sam['intent']
@@ -42,12 +42,13 @@ class SeqClsDataset(Dataset):
             except:
                 pass
             batch_str.append(sam['text'])
+            id_list.append(sam['id'])
 
         encoding_list = self.vocab.encode_batch(batch_str, to_len=self.max_len)
         encoding_list = torch.LongTensor(encoding_list)
         label_list = torch.LongTensor(label_list)
 
-        return {'tensor': encoding_list, 'label': label_list}
+        return {'tensor': encoding_list, 'label': label_list, 'id': id_list}
 
     def label2idx(self, label: str):
         return self.label_mapping[label]
