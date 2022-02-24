@@ -15,6 +15,7 @@ from tqdm import trange, tqdm
 from dataset import SeqClsDataset
 from utils import Vocab
 from model import SeqClassifier
+from sklearn.model_selection import train_test_split
 
 from nni.utils import merge_parameter
 import nni
@@ -47,6 +48,35 @@ def main(args):
     validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=True, num_workers=4
                                               , collate_fn=datasets['eval'].collate_fn)
 
+
+    collect_data = np.zeros((0, 128))
+    collect_label = np.zeros((0))
+    for package in trainloader:
+        # move tensors to GPU if CUDA is available
+        tensor = package['tensor'].cpu().detach().numpy()
+        label = package['label'].cpu().detach().numpy()
+        collect_data = np.append(collect_data, tensor, axis=0)
+        collect_label = np.append(collect_label, label, axis=0)
+
+    for package in validloader:
+        # move tensors to GPU if CUDA is available
+        tensor = package['tensor'].cpu().detach().numpy()
+        label = package['label'].cpu().detach().numpy()
+        collect_data = np.append(collect_data, tensor, axis=0)
+        collect_label = np.append(collect_label, label, axis=0)
+
+    X_train, X_test, y_train, y_test = train_test_split(collect_data, collect_label, test_size=0.1, random_state=0)
+    X_train = torch.Tensor(X_train)  # transform to torch tensor
+    X_test = torch.Tensor(X_test)
+    y_train = torch.Tensor(y_train)  # transform to torch tensor
+    y_test = torch.Tensor(y_test)  # transform to torch tensor
+
+    trainloader = torch.utils.data.TensorDataset(X_train, y_train)  # create your datset
+    trainloader = torch.utils.data.DataLoader(trainloader, batch_size=args.batch_size, shuffle=True, num_workers=4)  # create your dataloader
+
+    validloader = torch.utils.data.TensorDataset(X_test, y_test)  # create your datset
+    validloader = torch.utils.data.DataLoader(validloader, batch_size=args.batch_size, shuffle=False, num_workers=4)  # create your dataloader
+
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
     # init model and move model to target device(cpu / gpu)
     model = SeqClassifier(embeddings, hidden_size=args.hidden_size,
@@ -78,11 +108,11 @@ def main(args):
         ###################
         net.train()
 
-        for package in trainloader:
+        for data, target in trainloader:
             # move tensors to GPU if CUDA is available
-            data = package['tensor']
-            target = package['label']
-            data, target = data.cuda(), target.cuda()
+            #data = package['tensor']
+            #target = package['label']
+            data, target = data.cuda().long(), target.cuda().long()
 
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
@@ -110,12 +140,12 @@ def main(args):
         # validate the model #
         ######################
         net.eval()
-        for package in validloader:
+        for data, target in validloader:
 
-            data = package['tensor']
-            target = package['label']
+            #data = package['tensor']
+            #target = package['label']
             # move tensors to GPU if CUDA is available
-            data, target = data.cuda(), target.cuda()
+            data, target = data.cuda().long(), target.cuda().long()
             # forward pass: compute predicted outputs by passing inputs to the model
             output = net(data)['outputs']
 
@@ -132,10 +162,10 @@ def main(args):
             valid_loss += loss.item() * data.size(0)
 
         # calculate average losses
-        train_loss = train_loss / len(trainloader.dataset.data)
-        valid_loss = valid_loss / len(validloader.dataset.data)
-        train_correct = 100. * train_correct / len(trainloader.dataset.data)
-        valid_correct = 100. * valid_correct / len(validloader.dataset.data)
+        train_loss = train_loss / len(trainloader.dataset)
+        valid_loss = valid_loss / len(validloader.dataset)
+        train_correct = 100. * train_correct / len(trainloader.dataset)
+        valid_correct = 100. * valid_correct / len(validloader.dataset)
 
         # print training/validation statistics
         print(
