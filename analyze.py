@@ -25,7 +25,7 @@ if __name__ == '__main__':
     print(max_len)
     '''
     dic = {}
-    f = open('./data/intent/train.json')
+    f = open('./data/intent/eval.json')
     data = json.load(f)
     max_len = 0
     for i in data:

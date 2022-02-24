@@ -59,8 +59,8 @@ def main(args):
     net = model.to(device)
 
     # init optimizer
-    optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=3)
+    optimizer = optim.Adam(net.parameters(), lr=args.lr, weight_decay=1e-5)
+    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=3)
     criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
@@ -152,7 +152,7 @@ def main(args):
             torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
             valid_loss_min = valid_loss
 
-        scheduler.step()
+        #scheduler.step()
 
     nni.report_final_result(valid_loss_min)
     # TODO: Inference on test set
@@ -176,29 +176,29 @@ def parse_args() -> Namespace:
         "--ckpt_dir",
         type=Path,
         help="Directory to save the model file.",
-        default="./ckpt/intent/",
+        default="./ckpt/intent_local/",
     )
 
     # data
     parser.add_argument("--max_len", type=int, default=128)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=768)
     parser.add_argument("--num_layers", type=int, default=4)
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=0.001)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--batch_size", type=int, default=128)
 
     # training
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
     )
-    parser.add_argument("--num_epoch", type=int, default=100)
+    parser.add_argument("--num_epoch", type=int, default=20)
     parser.add_argument('--log_interval', type=int, default=1000, metavar='N',
                         help='how many batches to wait before logging training status')
     args = parser.parse_args()
