@@ -65,7 +65,7 @@ def main(args):
         collect_data = np.append(collect_data, tensor, axis=0)
         collect_label = np.append(collect_label, label, axis=0)
 
-    X_train, X_test, y_train, y_test = train_test_split(collect_data, collect_label, test_size=0.3, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(collect_data, collect_label, test_size=0.4, random_state=0)
     X_train = torch.Tensor(X_train)  # transform to torch tensor
     X_test = torch.Tensor(X_test)
     y_train = torch.Tensor(y_train)  # transform to torch tensor
