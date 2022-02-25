@@ -91,11 +91,11 @@ def parse_args() -> Namespace:
     parser.add_argument("--pred_file", type=Path, default="pred.intent.csv")
 
     # data
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=64)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=768)
-    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--hidden_size", type=int, default=1024)
+    parser.add_argument("--num_layers", type=int, default=3)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 

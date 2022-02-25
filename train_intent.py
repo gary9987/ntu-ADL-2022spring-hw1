@@ -49,7 +49,7 @@ def main(args):
                                               , collate_fn=datasets['eval'].collate_fn)
 
 
-    collect_data = np.zeros((0, 128))
+    collect_data = np.zeros((0, args.max_len))
     collect_label = np.zeros((0))
     for package in trainloader:
         # move tensors to GPU if CUDA is available
@@ -210,11 +210,11 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=64)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=768)
-    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--hidden_size", type=int, default=1024)
+    parser.add_argument("--num_layers", type=int, default=3)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
