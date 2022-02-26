@@ -15,20 +15,23 @@ from tqdm import trange, tqdm
 from dataset import SeqClsDataset
 from utils import Vocab
 from model import SeqClassifier
+from sklearn.model_selection import train_test_split
+
+from nni.utils import merge_parameter
+import nni
+import logging
 
 TRAIN = "train"
 DEV = "eval"
 SPLITS = [TRAIN, DEV]
 torch.manual_seed(0)
 
-def main(args):
+logger = logging.getLogger('train_intent')
 
-    checkpoint_path = './checkpoint/intent/'
-    Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
+def main(args):
 
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
         vocab: Vocab = pickle.load(f)
-
 
     intent_idx_path = args.cache_dir / "intent2idx.json"
     intent2idx: Dict[str, int] = json.loads(intent_idx_path.read_text())
@@ -45,6 +48,35 @@ def main(args):
     validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=True, num_workers=4
                                               , collate_fn=datasets['eval'].collate_fn)
 
+
+    collect_data = np.zeros((0, 128))
+    collect_label = np.zeros((0))
+    for package in trainloader:
+        # move tensors to GPU if CUDA is available
+        tensor = package['tensor'].cpu().detach().numpy()
+        label = package['label'].cpu().detach().numpy()
+        collect_data = np.append(collect_data, tensor, axis=0)
+        collect_label = np.append(collect_label, label, axis=0)
+
+    for package in validloader:
+        # move tensors to GPU if CUDA is available
+        tensor = package['tensor'].cpu().detach().numpy()
+        label = package['label'].cpu().detach().numpy()
+        collect_data = np.append(collect_data, tensor, axis=0)
+        collect_label = np.append(collect_label, label, axis=0)
+
+    X_train, X_test, y_train, y_test = train_test_split(collect_data, collect_label, test_size=0.1, random_state=0)
+    X_train = torch.Tensor(X_train)  # transform to torch tensor
+    X_test = torch.Tensor(X_test)
+    y_train = torch.Tensor(y_train)  # transform to torch tensor
+    y_test = torch.Tensor(y_test)  # transform to torch tensor
+
+    trainloader = torch.utils.data.TensorDataset(X_train, y_train)  # create your datset
+    trainloader = torch.utils.data.DataLoader(trainloader, batch_size=args.batch_size, shuffle=True, num_workers=4)  # create your dataloader
+
+    validloader = torch.utils.data.TensorDataset(X_test, y_test)  # create your datset
+    validloader = torch.utils.data.DataLoader(validloader, batch_size=args.batch_size, shuffle=False, num_workers=4)  # create your dataloader
+
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
     # init model and move model to target device(cpu / gpu)
     model = SeqClassifier(embeddings, hidden_size=args.hidden_size,
@@ -57,8 +89,8 @@ def main(args):
     net = model.to(device)
 
     # init optimizer
-    optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=3)
+    optimizer = optim.Adam(net.parameters(), lr=args.lr, weight_decay=1e-5)
+    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=3)
     criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
@@ -76,11 +108,11 @@ def main(args):
         ###################
         net.train()
 
-        for package in trainloader:
+        for data, target in trainloader:
             # move tensors to GPU if CUDA is available
-            data = package['tensor']
-            target = package['label']
-            data, target = data.cuda(), target.cuda()
+            #data = package['tensor']
+            #target = package['label']
+            data, target = data.cuda().long(), target.cuda().long()
 
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
@@ -108,12 +140,12 @@ def main(args):
         # validate the model #
         ######################
         net.eval()
-        for package in validloader:
+        for data, target in validloader:
 
-            data = package['tensor']
-            target = package['label']
+            #data = package['tensor']
+            #target = package['label']
             # move tensors to GPU if CUDA is available
-            data, target = data.cuda(), target.cuda()
+            data, target = data.cuda().long(), target.cuda().long()
             # forward pass: compute predicted outputs by passing inputs to the model
             output = net(data)['outputs']
 
@@ -130,10 +162,10 @@ def main(args):
             valid_loss += loss.item() * data.size(0)
 
         # calculate average losses
-        train_loss = train_loss / len(trainloader.dataset.data)
-        valid_loss = valid_loss / len(validloader.dataset.data)
-        train_correct = 100. * train_correct / len(trainloader.dataset.data)
-        valid_correct = 100. * valid_correct / len(validloader.dataset.data)
+        train_loss = train_loss / len(trainloader.dataset)
+        valid_loss = valid_loss / len(validloader.dataset)
+        train_correct = 100. * train_correct / len(trainloader.dataset)
+        valid_correct = 100. * valid_correct / len(validloader.dataset)
 
         # print training/validation statistics
         print(
@@ -141,6 +173,7 @@ def main(args):
                 train_correct,
                 train_loss, valid_correct, valid_loss))
 
+        nni.report_intermediate_result(valid_loss)
         # save model if validation loss has decreased
         if valid_loss <= valid_loss_min:
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
@@ -149,8 +182,9 @@ def main(args):
             torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
             valid_loss_min = valid_loss
 
-        scheduler.step()
+        #scheduler.step()
 
+    nni.report_final_result(valid_loss_min)
     # TODO: Inference on test set
 
 
@@ -172,35 +206,50 @@ def parse_args() -> Namespace:
         "--ckpt_dir",
         type=Path,
         help="Directory to save the model file.",
-        default="./ckpt/intent/",
+        default="./ckpt/intent_local/",
     )
 
     # data
     parser.add_argument("--max_len", type=int, default=128)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=768)
     parser.add_argument("--num_layers", type=int, default=4)
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=0.001)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--batch_size", type=int, default=128)
 
     # training
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
     )
     parser.add_argument("--num_epoch", type=int, default=100)
-
+    parser.add_argument('--log_interval', type=int, default=1000, metavar='N',
+                        help='how many batches to wait before logging training status')
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
+    try:
+        # get parameters form tuner
+        tuner_params = nni.get_next_parameter()
+        logger.debug(tuner_params)
+        params = merge_parameter(parse_args(), tuner_params)
+        print(params)
+        params.ckpt_dir.mkdir(parents=True, exist_ok=True)
+        main(params)
+    except Exception as exception:
+        logger.exception(exception)
+        raise
+
+    '''
     args = parse_args()
     args.ckpt_dir.mkdir(parents=True, exist_ok=True)
     main(args)
+    '''

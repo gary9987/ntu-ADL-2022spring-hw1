@@ -24,18 +24,19 @@ class SeqClassifier(torch.nn.Module):
         self.drop = nn.Dropout(dropout)
         self.bn1 = nn.BatchNorm1d(num_features=hidden_size * (2 if bidirectional else 1) * num_layers)
         self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1) * num_layers, 512)
+        self.relu = nn.ReLU()
         self.bn2 = nn.BatchNorm1d(512)
         self.linear2 = nn.Linear(512, num_class)
-        self.relu = nn.ReLU()
+
 
     def forward(self, x) -> Dict[str, torch.Tensor]:
         x = self.embed(x)
         _, h = self.rnn(x)
         h = h.permute(1, 0, 2)
         h = h.reshape(h.shape[0], -1)
-        outputs = self.bn1(h)
-        outputs = self.drop(outputs)
+        outputs = self.drop(h)
+        outputs = self.bn1(outputs)
         outputs = self.relu(self.linear1(outputs))
         outputs = self.drop(self.bn2(outputs))
-        outputs = self.linear2(outputs)
+        outputs = self.relu(self.linear2(outputs))
         return {'outputs': outputs}

@@ -44,29 +44,28 @@ def main(args):
     model.to(args.device)
 
     pred_list = []
+    id_list = []
     # Predict dataset
     for package in dataloader:
         # move tensors to GPU if CUDA is available
         data = package['tensor'].cuda()
+        id_ = package['id']
         # forward pass: compute predicted outputs by passing inputs to the model
         output = model(data)['outputs']
 
         # select the class with highest probability
         _, pred = output.max(1)
         pred_list += [p.item() for p in pred]
+        id_list += [i for i in id_]
 
     # Write prediction to file (args.pred_file)
-
     print(args.pred_file)
     with open(args.pred_file, 'w') as file:
         writer = csv.writer(file)
         writer.writerow(['id', 'intent'])
-        cot = 0
-        for i in pred_list:
-            label = dataset.idx2label(i)
-            writer.writerow(['test-' + str(cot), label])
-            cot += 1
-
+        for i in range(len(pred_list)):
+            label = dataset.idx2label(pred_list[i])
+            writer.writerow([id_list[i], label])
 
 
 def parse_args() -> Namespace:
@@ -95,9 +94,9 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=128)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=768)
     parser.add_argument("--num_layers", type=int, default=4)
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # data loader
