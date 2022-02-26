@@ -65,7 +65,7 @@ def main(args):
         collect_data = np.append(collect_data, tensor, axis=0)
         collect_label = np.append(collect_label, label, axis=0)
 
-    X_train, X_test, y_train, y_test = train_test_split(collect_data, collect_label, test_size=0.3, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(collect_data, collect_label, test_size=0.1, random_state=0)
     X_train = torch.Tensor(X_train)  # transform to torch tensor
     X_test = torch.Tensor(X_test)
     y_train = torch.Tensor(y_train)  # transform to torch tensor
@@ -228,7 +228,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
     )
-    parser.add_argument("--num_epoch", type=int, default=20)
+    parser.add_argument("--num_epoch", type=int, default=100)
     parser.add_argument('--log_interval', type=int, default=1000, metavar='N',
                         help='how many batches to wait before logging training status')
     args = parser.parse_args()
