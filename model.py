@@ -36,7 +36,7 @@ class SeqClassifier(torch.nn.Module):
         h = h.reshape(h.shape[0], -1)
         outputs = self.drop(h)
         outputs = self.bn1(outputs)
-        outputs = self.relu(self.linear1(h))
+        outputs = self.relu(self.linear1(outputs))
         outputs = self.drop(self.bn2(outputs))
         outputs = self.relu(self.linear2(outputs))
         return {'outputs': outputs}
