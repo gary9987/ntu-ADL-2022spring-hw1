@@ -48,7 +48,7 @@ def main(args):
     validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=True, num_workers=4
                                               , collate_fn=datasets['eval'].collate_fn)
 
-
+    '''
     collect_data = np.zeros((0, 128))
     collect_label = np.zeros((0))
     for package in trainloader:
@@ -76,6 +76,7 @@ def main(args):
 
     validloader = torch.utils.data.TensorDataset(X_test, y_test)  # create your datset
     validloader = torch.utils.data.DataLoader(validloader, batch_size=args.batch_size, shuffle=False, num_workers=4)  # create your dataloader
+    '''
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
     # init model and move model to target device(cpu / gpu)
@@ -89,8 +90,8 @@ def main(args):
     net = model.to(device)
 
     # init optimizer
-    optimizer = optim.Adam(net.parameters(), lr=args.lr, weight_decay=1e-5)
-    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=3)
+    optimizer = optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5)
     criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
@@ -108,10 +109,10 @@ def main(args):
         ###################
         net.train()
 
-        for data, target in trainloader:
+        for package in trainloader:
             # move tensors to GPU if CUDA is available
-            #data = package['tensor']
-            #target = package['label']
+            data = package['tensor']
+            target = package['label']
             data, target = data.cuda().long(), target.cuda().long()
 
             # clear the gradients of all optimized variables
@@ -140,10 +141,10 @@ def main(args):
         # validate the model #
         ######################
         net.eval()
-        for data, target in validloader:
+        for package in validloader:
 
-            #data = package['tensor']
-            #target = package['label']
+            data = package['tensor']
+            target = package['label']
             # move tensors to GPU if CUDA is available
             data, target = data.cuda().long(), target.cuda().long()
             # forward pass: compute predicted outputs by passing inputs to the model
@@ -214,15 +215,16 @@ def parse_args() -> Namespace:
 
     # model
     parser.add_argument("--hidden_size", type=int, default=768)
-    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--num_layers", type=int, default=3)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
     parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--weight_decay", type=float, default=0.5)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=256)
 
     # training
     parser.add_argument(

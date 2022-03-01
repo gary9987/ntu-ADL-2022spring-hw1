@@ -17,26 +17,22 @@ class SeqClassifier(torch.nn.Module):
     ) -> None:
         super(SeqClassifier, self).__init__()
         self.embed = Embedding.from_pretrained(embeddings, freeze=False)
+        self.ln = nn.LayerNorm(embeddings.shape[1])
         self.rnn = nn.GRU(input_size=embeddings.shape[1], hidden_size=hidden_size,
                           num_layers=num_layers, bidirectional=bidirectional,
                           dropout=dropout, batch_first=True)
 
         self.drop = nn.Dropout(dropout)
-        self.bn1 = nn.BatchNorm1d(num_features=hidden_size * (2 if bidirectional else 1) * num_layers)
-        self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1) * num_layers, 512)
-        self.relu = nn.ReLU()
-        self.bn2 = nn.BatchNorm1d(512)
+        self.bn1 = nn.BatchNorm1d(num_features=hidden_size * (2 if bidirectional else 1))
+        self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1), 512)
+        self.tanh = nn.Tanh()
         self.linear2 = nn.Linear(512, num_class)
 
-
     def forward(self, x) -> Dict[str, torch.Tensor]:
-        x = self.embed(x)
-        _, h = self.rnn(x)
-        h = h.permute(1, 0, 2)
-        h = h.reshape(h.shape[0], -1)
-        outputs = self.drop(h)
+        x = self.ln(self.embed(x))
+        outputs, h = self.rnn(x)
+        outputs = outputs[:, -1, :]
         outputs = self.bn1(outputs)
-        outputs = self.relu(self.linear1(outputs))
-        outputs = self.drop(self.bn2(outputs))
-        outputs = self.relu(self.linear2(outputs))
+        outputs = self.tanh(self.linear1(outputs))
+        outputs = self.linear2(outputs)
         return {'outputs': outputs}

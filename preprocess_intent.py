@@ -82,7 +82,7 @@ def main(args):
         words.update(
             [token for instance in dataset for token in instance["text"].split()]
         )
-
+    intents = sorted(intents)
     intent2idx = {tag: i for i, tag in enumerate(intents)}
     intent_tag_path = args.output_dir / "intent2idx.json"
     intent_tag_path.write_text(json.dumps(intent2idx, indent=2))
