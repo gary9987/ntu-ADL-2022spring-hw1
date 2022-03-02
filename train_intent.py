@@ -25,8 +25,8 @@ TRAIN = "train"
 DEV = "eval"
 SPLITS = [TRAIN, DEV]
 torch.manual_seed(0)
-
 logger = logging.getLogger('train_intent')
+
 
 def main(args):
 
@@ -48,36 +48,6 @@ def main(args):
     validloader = torch.utils.data.DataLoader(datasets['eval'], batch_size=args.batch_size, shuffle=True, num_workers=4
                                               , collate_fn=datasets['eval'].collate_fn)
 
-    '''
-    collect_data = np.zeros((0, 128))
-    collect_label = np.zeros((0))
-    for package in trainloader:
-        # move tensors to GPU if CUDA is available
-        tensor = package['tensor'].cpu().detach().numpy()
-        label = package['label'].cpu().detach().numpy()
-        collect_data = np.append(collect_data, tensor, axis=0)
-        collect_label = np.append(collect_label, label, axis=0)
-
-    for package in validloader:
-        # move tensors to GPU if CUDA is available
-        tensor = package['tensor'].cpu().detach().numpy()
-        label = package['label'].cpu().detach().numpy()
-        collect_data = np.append(collect_data, tensor, axis=0)
-        collect_label = np.append(collect_label, label, axis=0)
-
-    X_train, X_test, y_train, y_test = train_test_split(collect_data, collect_label, test_size=0.1, random_state=0)
-    X_train = torch.Tensor(X_train)  # transform to torch tensor
-    X_test = torch.Tensor(X_test)
-    y_train = torch.Tensor(y_train)  # transform to torch tensor
-    y_test = torch.Tensor(y_test)  # transform to torch tensor
-
-    trainloader = torch.utils.data.TensorDataset(X_train, y_train)  # create your datset
-    trainloader = torch.utils.data.DataLoader(trainloader, batch_size=args.batch_size, shuffle=True, num_workers=4)  # create your dataloader
-
-    validloader = torch.utils.data.TensorDataset(X_test, y_test)  # create your datset
-    validloader = torch.utils.data.DataLoader(validloader, batch_size=args.batch_size, shuffle=False, num_workers=4)  # create your dataloader
-    '''
-
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
     # init model and move model to target device(cpu / gpu)
     model = SeqClassifier(embeddings, hidden_size=args.hidden_size,
@@ -86,12 +56,12 @@ def main(args):
                           bidirectional=args.bidirectional,
                           num_class=datasets['train'].num_classes)
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = args.device
     net = model.to(device)
 
     # init optimizer
     optimizer = optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=4)
+    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=4)
     criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
@@ -113,7 +83,7 @@ def main(args):
             # move tensors to GPU if CUDA is available
             data = package['tensor']
             target = package['label']
-            data, target = data.cuda().long(), target.cuda().long()
+            data, target = data.to(device), target.to(device)
 
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
@@ -146,7 +116,7 @@ def main(args):
             data = package['tensor']
             target = package['label']
             # move tensors to GPU if CUDA is available
-            data, target = data.cuda().long(), target.cuda().long()
+            data, target = data.to(device), target.to(device)
             # forward pass: compute predicted outputs by passing inputs to the model
             output = net(data)['outputs']
 
@@ -207,7 +177,7 @@ def parse_args() -> Namespace:
         "--ckpt_dir",
         type=Path,
         help="Directory to save the model file.",
-        default="./ckpt/intent_local/",
+        default="./ckpt/intent/",
     )
 
     # data
@@ -228,7 +198,7 @@ def parse_args() -> Namespace:
 
     # training
     parser.add_argument(
-        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
+        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
     parser.add_argument("--num_epoch", type=int, default=300)
     parser.add_argument('--log_interval', type=int, default=1000, metavar='N',

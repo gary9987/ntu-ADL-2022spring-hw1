@@ -12,6 +12,7 @@ from model import SeqClassifier
 from utils import Vocab
 import csv
 
+
 def main(args):
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
         vocab: Vocab = pickle.load(f)
@@ -40,15 +41,16 @@ def main(args):
 
     ckpt = torch.load(args.ckpt_path)
     # load weights into model
+    device = args.device
     model.load_state_dict(ckpt)
-    model.to(args.device)
+    model.to(device)
 
     pred_list = []
     id_list = []
     # Predict dataset
     for package in dataloader:
         # move tensors to GPU if CUDA is available
-        data = package['tensor'].cuda()
+        data = package['tensor'].to(device)
         id_ = package['id']
         # forward pass: compute predicted outputs by passing inputs to the model
         output = model(data)['outputs']
@@ -103,7 +105,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--batch_size", type=int, default=256)
 
     parser.add_argument(
-        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
+        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
     args = parser.parse_args()
     return args
