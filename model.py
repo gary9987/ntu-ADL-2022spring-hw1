@@ -25,7 +25,8 @@ class SeqClassifier(torch.nn.Module):
         self.drop = nn.Dropout(dropout)
         self.bn1 = nn.BatchNorm1d(num_features=hidden_size * (2 if bidirectional else 1))
         self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1), 512)
-        self.tanh = nn.Tanh()
+        self.act = nn.ReLU()
+        self.bn2 = nn.BatchNorm1d(512)
         self.linear2 = nn.Linear(512, num_class)
 
     def forward(self, x) -> Dict[str, torch.Tensor]:
@@ -33,6 +34,7 @@ class SeqClassifier(torch.nn.Module):
         outputs, h = self.rnn(x)
         outputs = outputs[:, -1, :]
         outputs = self.bn1(outputs)
-        outputs = self.tanh(self.linear1(outputs))
-        outputs = self.linear2(outputs)
+        outputs = self.act(self.linear1(outputs))
+        outputs = self.bn2(outputs)
+        outputs = self.act(self.linear2(outputs))
         return {'outputs': outputs}

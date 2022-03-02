@@ -215,13 +215,13 @@ def parse_args() -> Namespace:
 
     # model
     parser.add_argument("--hidden_size", type=int, default=768)
-    parser.add_argument("--num_layers", type=int, default=3)
+    parser.add_argument("--num_layers", type=int, default=4)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
     parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--weight_decay", type=float, default=0.5)
+    parser.add_argument("--weight_decay", type=float, default=1.0)
 
     # data loader
     parser.add_argument("--batch_size", type=int, default=256)
@@ -230,7 +230,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
     )
-    parser.add_argument("--num_epoch", type=int, default=100)
+    parser.add_argument("--num_epoch", type=int, default=300)
     parser.add_argument('--log_interval', type=int, default=1000, metavar='N',
                         help='how many batches to wait before logging training status')
     args = parser.parse_args()
