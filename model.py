@@ -14,8 +14,10 @@ class SeqClassifier(torch.nn.Module):
             dropout: float,
             bidirectional: bool,
             num_class: int,
+            task='intent'
     ) -> None:
         super(SeqClassifier, self).__init__()
+        self.task = task
         self.embed = Embedding.from_pretrained(embeddings, freeze=False)
         self.ln = nn.LayerNorm(embeddings.shape[1])
         self.rnn = nn.GRU(input_size=embeddings.shape[1], hidden_size=hidden_size,
@@ -32,9 +34,16 @@ class SeqClassifier(torch.nn.Module):
     def forward(self, x) -> Dict[str, torch.Tensor]:
         x = self.ln(self.embed(x))
         outputs, h = self.rnn(x)
-        outputs = outputs[:, -1, :]
+        if self.task == 'intent':
+            outputs = outputs[:, -1, :]
+        elif self.task == 'slot':
+            outputs = outputs.permute(0, 2, 1)
+
         outputs = self.bn1(outputs)
+        outputs = outputs.permute(0, 2, 1)
         outputs = self.act(self.linear1(outputs))
+        outputs = outputs.permute(0, 2, 1)
         outputs = self.bn2(outputs)
+        outputs = outputs.permute(0, 2, 1)
         outputs = self.act(self.linear2(outputs))
         return {'outputs': outputs}
