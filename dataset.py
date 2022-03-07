@@ -36,6 +36,7 @@ class SeqClsDataset(Dataset):
         label_list = []
         batch_str = []
         id_list = []
+        original_len = []
 
         for sam in samples:
             try:
@@ -47,13 +48,16 @@ class SeqClsDataset(Dataset):
                     label_seq = [self.label2idx(i) for i in sam['tags']] + \
                                 [self.label2idx('O') for _ in range(self.max_len - len(sam['tags']))]
                     label_list.append(label_seq)
+
             except:
-                print('Error in collate_fn')
+                pass
+                #print('Error in collate_fn')
 
             if self.task == 'intent':
                 batch_str.append(sam['text'])
             elif self.task == 'slot':
                 batch_str.append(sam['tokens'])
+                original_len.append(len(sam['tokens']))
 
             id_list.append(sam['id'])
 
@@ -61,7 +65,7 @@ class SeqClsDataset(Dataset):
         encoding_list = torch.LongTensor(encoding_list)
         label_list = torch.LongTensor(label_list)
 
-        return {'tensor': encoding_list, 'label': label_list, 'id': id_list}
+        return {'tensor': encoding_list, 'label': label_list, 'id': id_list, 'original_len': original_len}
 
     def label2idx(self, label: str):
         return self.label_mapping[label]

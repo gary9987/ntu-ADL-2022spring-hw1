@@ -91,6 +91,8 @@ def main(args):
 
             # if the model predicts the same results as the true
             # label, then the correct counter will plus
+            print(pred[0])
+            print(target[0])
             train_correct += torch.all(pred.eq(target), dim=1).sum().item()
 
         print(train_correct / len(trainloader.dataset))
@@ -119,10 +121,10 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=64)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=1024)
+    parser.add_argument("--hidden_size", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--bidirectional", type=bool, default=True)
@@ -138,7 +140,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=300)
+    parser.add_argument("--num_epoch", type=int, default=1)
     parser.add_argument('--log_interval', type=int, default=1000, metavar='N',
                         help='how many batches to wait before logging training status')
     args = parser.parse_args()

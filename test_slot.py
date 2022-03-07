@@ -21,7 +21,7 @@ def main(args):
     intent2idx: Dict[str, int] = json.loads(intent_idx_path.read_text())
 
     data = json.loads(args.test_file.read_text())
-    dataset = SeqClsDataset(data, vocab, intent2idx, args.max_len)
+    dataset = SeqClsDataset(data, vocab, intent2idx, args.max_len, task='slot')
 
     # Crecate DataLoader for test dataset
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2,
@@ -35,14 +35,14 @@ def main(args):
         args.num_layers,
         args.dropout,
         args.bidirectional,
-        dataset.num_classes
+        dataset.num_classes,
+        task='slot'
     )
     model.eval()
 
-    ckpt = torch.load(args.ckpt_path)
-    # load weights into model
     device = args.device
-    model.load_state_dict(ckpt)
+    # load weights into model
+    model.load_state_dict(torch.load(args.ckpt_path))
     model.to(device)
 
     pred_list = []
@@ -52,21 +52,29 @@ def main(args):
         # move tensors to GPU if CUDA is available
         data = package['tensor'].to(device)
         id_ = package['id']
+        len_list = package['original_len']
         # forward pass: compute predicted outputs by passing inputs to the model
-        output = model(data)['outputs']
+        output = model(data)['outputs'].permute(0, 2, 1)
 
         # select the class with highest probability
         _, pred = output.max(1)
-        pred_list += [p.item() for p in pred]
+        for i in range(len(pred)):
+            tmp = [tag.item() for tag in pred[i]]
+            tmp = tmp[:len_list[i]]
+            pred_list.append(tmp)
         id_list += [i for i in id_]
 
     # Write prediction to file (args.pred_file)
     print(args.pred_file)
     with open(args.pred_file, 'w') as file:
         writer = csv.writer(file)
-        writer.writerow(['id', 'intent'])
+        writer.writerow(['id', 'tags'])
         for i in range(len(pred_list)):
-            label = dataset.idx2label(pred_list[i])
+            label = ''
+            for t in pred_list[i]:
+                label += dataset.idx2label(t) + ' '
+            # Remove last space
+            label = label[:-1]
             writer.writerow([id_list[i], label])
 
 
@@ -90,13 +98,13 @@ def parse_args() -> Namespace:
         help="Path to model checkpoint.",
         required=True
     )
-    parser.add_argument("--pred_file", type=Path, default="pred.intent.csv")
+    parser.add_argument("--pred_file", type=Path, default="pred.slot_tag.csv")
 
     # data
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=64)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=1024)
+    parser.add_argument("--hidden_size", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--bidirectional", type=bool, default=True)

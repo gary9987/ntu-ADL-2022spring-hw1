@@ -62,7 +62,6 @@ def main(args):
 
     # init optimizer
     optimizer = optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5)
     criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
@@ -154,8 +153,6 @@ def main(args):
             torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
             valid_loss_min = valid_loss
 
-        #scheduler.step()
-
     nni.report_final_result(valid_loss_min)
     # TODO: Inference on test set
 
@@ -182,10 +179,10 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=64)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=1024)
+    parser.add_argument("--hidden_size", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--bidirectional", type=bool, default=True)

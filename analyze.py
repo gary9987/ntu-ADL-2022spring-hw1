@@ -23,7 +23,7 @@ if __name__ == '__main__':
     for i in data:
         max_len = max(max_len, len(i['text'].split()))
     print(max_len)
-    '''
+    
     dic = {}
     f = open('./data/intent/eval.json')
     data = json.load(f)
@@ -34,3 +34,5 @@ if __name__ == '__main__':
         except:
             dic[i['intent']] = 1
     print(dic)
+    '''
+
