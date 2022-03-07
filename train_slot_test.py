@@ -57,13 +57,10 @@ def main(args):
                           num_class=datasets['train'].num_classes,
                           task='slot')
 
+    ckpt = torch.load(args.ckpt_path)
+    model.load_state_dict(ckpt)
     device = args.device
     net = model.to(device)
-
-    # init optimizer
-    optimizer = optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5)
-    criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
     epoch_pbar = trange(args.num_epoch, desc="Epoch")
@@ -78,7 +75,7 @@ def main(args):
         ###################
         # train the model #
         ###################
-        net.train()
+        net.eval()
 
         for package in trainloader:
             # move tensors to GPU if CUDA is available
@@ -86,8 +83,6 @@ def main(args):
             target = package['label']
             data, target = data.to(device), target.to(device)
 
-            # clear the gradients of all optimized variables
-            optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
             output = net(data)['outputs'].permute(0, 2, 1)
 
@@ -95,69 +90,11 @@ def main(args):
             _, pred = output.max(1)
 
             # if the model predicts the same results as the true
-            # label, then the correct counter will plus 1
+            # label, then the correct counter will plus
             train_correct += torch.all(pred.eq(target), dim=1).sum().item()
 
-            # calculate the batch loss
-            loss = criterion(output, target)
+        print(train_correct / len(trainloader.dataset))
 
-            # backward pass: compute gradient of the loss with respect to model parameters
-            loss.backward()
-            # perform a single optimization step (parameter update)
-            optimizer.step()
-            # update training loss
-            train_loss += loss.item() * data.size(0)
-
-        ######################
-        # validate the model #
-        ######################
-        net.eval()
-        for package in validloader:
-
-            data = package['tensor']
-            target = package['label']
-            # move tensors to GPU if CUDA is available
-            data, target = data.to(device), target.to(device)
-            # forward pass: compute predicted outputs by passing inputs to the model
-            output = net(data)['outputs'].permute(0, 2, 1)
-
-            # select the class with highest probability
-            _, pred = output.max(1)
-
-            # if the model predicts the same results as the true
-            # label, then the correct counter will plus 1
-            valid_correct += torch.all(pred.eq(target), dim=1).sum().item()
-
-            # calculate the batch loss
-            loss = criterion(output, target)
-            # update average validation loss
-            valid_loss += loss.item() * data.size(0)
-
-        # calculate average losses
-        train_loss = train_loss / len(trainloader.dataset)
-        valid_loss = valid_loss / len(validloader.dataset)
-        train_correct = 100. * train_correct / len(trainloader.dataset)
-        valid_correct = 100. * valid_correct / len(validloader.dataset)
-
-        # print training/validation statistics
-        print(
-            '\tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(
-                train_correct,
-                train_loss, valid_correct, valid_loss))
-
-        nni.report_intermediate_result(valid_loss)
-        # save model if validation loss has decreased
-        if valid_loss <= valid_loss_min:
-            print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
-                valid_loss_min,
-                valid_loss))
-            torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
-            valid_loss_min = valid_loss
-
-        #scheduler.step()
-
-    nni.report_final_result(valid_loss_min)
-    # TODO: Inference on test set
 
 
 def parse_args() -> Namespace:
@@ -175,10 +112,10 @@ def parse_args() -> Namespace:
         default="./cache/slot/",
     )
     parser.add_argument(
-        "--ckpt_dir",
+        "--ckpt_path",
         type=Path,
         help="Directory to save the model file.",
-        default="./ckpt/slot/",
+        default="./ckpt/slot/best.pt",
     )
 
     # data
@@ -215,7 +152,6 @@ if __name__ == "__main__":
         logger.debug(tuner_params)
         params = merge_parameter(parse_args(), tuner_params)
         print(params)
-        params.ckpt_dir.mkdir(parents=True, exist_ok=True)
         main(params)
     except Exception as exception:
         logger.exception(exception)
