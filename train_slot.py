@@ -62,6 +62,7 @@ def main(args):
 
     # init optimizer
     optimizer = optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5)
     criterion = nn.CrossEntropyLoss()
 
     valid_loss_min = np.Inf
@@ -153,6 +154,8 @@ def main(args):
             torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
             valid_loss_min = valid_loss
 
+        scheduler.step()
+
     nni.report_final_result(valid_loss_min)
     # TODO: Inference on test set
 
@@ -179,7 +182,7 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=64)
+    parser.add_argument("--max_len", type=int, default=128)
 
     # model
     parser.add_argument("--hidden_size", type=int, default=512)
@@ -188,7 +191,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument("--weight_decay", type=float, default=1.0)
 
     # data loader
@@ -198,7 +201,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=300)
+    parser.add_argument("--num_epoch", type=int, default=500)
     parser.add_argument('--log_interval', type=int, default=1000, metavar='N',
                         help='how many batches to wait before logging training status')
     args = parser.parse_args()

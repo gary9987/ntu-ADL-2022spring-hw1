@@ -101,7 +101,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--pred_file", type=Path, default="pred.slot_tag.csv")
 
     # data
-    parser.add_argument("--max_len", type=int, default=64)
+    parser.add_argument("--max_len", type=int, default=128)
 
     # model
     parser.add_argument("--hidden_size", type=int, default=512)

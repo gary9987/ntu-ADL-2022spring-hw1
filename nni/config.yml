@@ -3,7 +3,7 @@
 # Afterwards, you can check "config_detailed.yml" for more explanation.
 
 searchSpaceFile: search_space.json
-trialCommand: python3 train_intent.py   # NOTE: change "python3" to "python" if you are using Windows
+trialCommand: python3.9 ../train_intent.py   # NOTE: change "python3" to "python" if you are using Windows
 trialGpuNumber: 1
 trialConcurrency: 1
 tuner:
