@@ -38,12 +38,14 @@ class SeqClassifier(torch.nn.Module):
             outputs = outputs[:, -1, :]
         elif self.task == 'slot':
             outputs = outputs.permute(0, 2, 1)
-
         outputs = self.bn1(outputs)
-        outputs = outputs.permute(0, 2, 1)
+        if self.task == 'slot':
+            outputs = outputs.permute(0, 2, 1)
         outputs = self.act(self.linear1(outputs))
-        outputs = outputs.permute(0, 2, 1)
+        if self.task == 'slot':
+            outputs = outputs.permute(0, 2, 1)
         outputs = self.bn2(outputs)
-        outputs = outputs.permute(0, 2, 1)
+        if self.task == 'slot':
+            outputs = outputs.permute(0, 2, 1)
         outputs = self.act(self.linear2(outputs))
         return {'outputs': outputs}
