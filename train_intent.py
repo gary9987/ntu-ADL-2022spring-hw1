@@ -15,10 +15,7 @@ from tqdm import trange, tqdm
 from dataset import SeqClsDataset
 from utils import Vocab
 from model import SeqClassifier
-from sklearn.model_selection import train_test_split
 
-from nni.utils import merge_parameter
-import nni
 import logging
 
 TRAIN = "train"
@@ -144,7 +141,6 @@ def main(args):
                 train_correct,
                 train_loss, valid_correct, valid_loss))
 
-        nni.report_intermediate_result(valid_loss)
         # save model if validation loss has decreased
         if valid_loss <= valid_loss_min:
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
@@ -155,7 +151,6 @@ def main(args):
 
         #scheduler.step()
 
-    nni.report_final_result(valid_loss_min)
     # TODO: Inference on test set
 
 
@@ -208,20 +203,7 @@ def parse_args() -> Namespace:
 
 
 if __name__ == "__main__":
-    try:
-        # get parameters form tuner
-        tuner_params = nni.get_next_parameter()
-        logger.debug(tuner_params)
-        params = merge_parameter(parse_args(), tuner_params)
-        print(params)
-        params.ckpt_dir.mkdir(parents=True, exist_ok=True)
-        main(params)
-    except Exception as exception:
-        logger.exception(exception)
-        raise
 
-    '''
     args = parse_args()
     args.ckpt_dir.mkdir(parents=True, exist_ok=True)
     main(args)
-    '''
