@@ -4,7 +4,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Dict
 import numpy as np
-
+import os
 import torch
 import torch.utils.data
 import torch.optim as optim
@@ -15,6 +15,7 @@ from tqdm import trange, tqdm
 from dataset import SeqClsDataset
 from utils import Vocab
 from model import SeqClassifier
+import matplotlib.pyplot as plt
 
 import logging
 
@@ -23,6 +24,26 @@ DEV = "eval"
 SPLITS = [TRAIN, DEV]
 torch.manual_seed(0)
 logger = logging.getLogger('train_intent')
+
+fig = plt.figure()
+y_loss = {'train': [], 'val': []}
+y_acc = {'train': [], 'val': []}
+x_epoch = []
+
+
+def draw_curve(current_epoch):
+    x_epoch.append(current_epoch)
+
+    plt.plot(x_epoch, y_loss['train'], 'bo-', label='train')
+    plt.plot(x_epoch, y_loss['val'], 'ro-', label='val')
+    fig.legend()
+    fig.savefig(os.path.join('./slot_loss.jpg'))
+    plt.clf()
+    plt.plot(x_epoch, y_acc['train'], 'bo-', label='train')
+    plt.plot(x_epoch, y_acc['val'], 'ro-', label='val')
+    fig.legend()
+    fig.savefig(os.path.join('./slot_acc.jpg'))
+    plt.clf()
 
 
 def main(args):
@@ -136,6 +157,12 @@ def main(args):
         train_correct = 100. * train_correct / len(trainloader.dataset)
         valid_correct = 100. * valid_correct / len(validloader.dataset)
 
+        y_loss['train'].append(train_loss)
+        y_loss['val'].append(valid_loss)
+        y_acc['train'].append(train_correct)
+        y_acc['val'].append(valid_correct)
+        draw_curve(epoch)
+
         # print training/validation statistics
         print(
             '\tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(
@@ -208,4 +235,3 @@ if __name__ == "__main__":
     args = parse_args()
     args.ckpt_dir.mkdir(parents=True, exist_ok=True)
     main(args)
-    
