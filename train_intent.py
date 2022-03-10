@@ -34,13 +34,13 @@ x_epoch = []
 def draw_curve(current_epoch):
     x_epoch.append(current_epoch)
 
-    plt.plot(x_epoch, y_loss['train'], 'bo-', label='train')
-    plt.plot(x_epoch, y_loss['val'], 'ro-', label='val')
+    plt.plot(x_epoch, y_loss['train'], label='train')
+    plt.plot(x_epoch, y_loss['val'], label='val')
     fig.legend()
     fig.savefig(os.path.join('./intent_loss.jpg'))
     plt.clf()
-    plt.plot(x_epoch, y_acc['train'], 'bo-', label='train')
-    plt.plot(x_epoch, y_acc['val'], 'ro-', label='val')
+    plt.plot(x_epoch, y_acc['train'], label='train')
+    plt.plot(x_epoch, y_acc['val'], label='val')
     fig.legend()
     fig.savefig(os.path.join('./intent_acc.jpg'))
     plt.clf()

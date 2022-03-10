@@ -34,13 +34,13 @@ x_epoch = []
 def draw_curve(current_epoch):
     x_epoch.append(current_epoch)
 
-    plt.plot(x_epoch, y_loss['train'], 'bo-', label='train')
-    plt.plot(x_epoch, y_loss['val'], 'ro-', label='val')
+    plt.plot(x_epoch, y_loss['train'], label='train')
+    plt.plot(x_epoch, y_loss['val'], label='val')
     fig.legend()
     fig.savefig(os.path.join('./slot_loss.jpg'))
     plt.clf()
-    plt.plot(x_epoch, y_acc['train'], 'bo-', label='train')
-    plt.plot(x_epoch, y_acc['val'], 'ro-', label='val')
+    plt.plot(x_epoch, y_acc['train'], label='train')
+    plt.plot(x_epoch, y_acc['val'], label='val')
     fig.legend()
     fig.savefig(os.path.join('./slot_acc.jpg'))
     plt.clf()
@@ -223,7 +223,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=500)
+    parser.add_argument("--num_epoch", type=int, default=300)
     parser.add_argument('--log_interval', type=int, default=1000, metavar='N',
                         help='how many batches to wait before logging training status')
     args = parser.parse_args()
