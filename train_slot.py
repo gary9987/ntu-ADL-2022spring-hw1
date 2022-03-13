@@ -47,7 +47,7 @@ def draw_curve(current_epoch):
 
 
 def main(args):
-    set_seed(0)
+    set_seed(28)
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
         vocab: Vocab = pickle.load(f)
 
