@@ -23,7 +23,8 @@ TRAIN = "train"
 DEV = "eval"
 SPLITS = [TRAIN, DEV]
 torch.manual_seed(0)
-logger = logging.getLogger('train_intent')
+logging.basicConfig(filename='train_slot.log', level=logging.INFO)
+
 
 fig = plt.figure()
 y_loss = {'train': [], 'val': []}
@@ -165,13 +166,21 @@ def main(args):
 
         # print training/validation statistics
         print(
-            '\tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(
-                train_correct,
+            '\tEpoch: {:d} \tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(
+                epoch, train_correct,
+                train_loss, valid_correct, valid_loss))
+        logging.info(
+            '\tEpoch: {:d} \tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(
+                epoch, train_correct,
                 train_loss, valid_correct, valid_loss))
 
         # save model if validation loss has decreased
         if valid_loss <= valid_loss_min:
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
+                valid_loss_min,
+                valid_loss))
+            logging.info(
+                'Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
                 valid_loss_min,
                 valid_loss))
             torch.save(net.state_dict(), str(args.ckpt_dir) + '/best.pt')
