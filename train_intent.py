@@ -13,7 +13,7 @@ import torch.nn as nn
 from tqdm import trange, tqdm
 
 from dataset import SeqClsDataset
-from utils import Vocab
+from utils import Vocab, set_seed
 from model import SeqClassifier
 import matplotlib.pyplot as plt
 
@@ -22,7 +22,6 @@ import logging
 TRAIN = "train"
 DEV = "eval"
 SPLITS = [TRAIN, DEV]
-torch.manual_seed(0)
 logging.basicConfig(filename='train_intent.log', level=logging.INFO)
 
 fig = plt.figure()
@@ -47,6 +46,7 @@ def draw_curve(current_epoch):
 
 
 def main(args):
+    set_seed(0)
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
         vocab: Vocab = pickle.load(f)
 
