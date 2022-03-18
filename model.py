@@ -24,7 +24,6 @@ class SeqClassifier(torch.nn.Module):
                           num_layers=num_layers, bidirectional=bidirectional,
                           dropout=dropout, batch_first=True)
 
-        self.drop = nn.Dropout(dropout)
         self.bn1 = nn.BatchNorm1d(num_features=hidden_size * (2 if bidirectional else 1))
         self.linear1 = nn.Linear(hidden_size * (2 if bidirectional else 1), 512)
         self.act = nn.ReLU()
