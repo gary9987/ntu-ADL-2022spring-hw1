@@ -1,6 +1,7 @@
 # ntu-ADL-2022spring-hw1
 ## Environment
 - Pytorch 1.7.1
+- Python 3.8.10
 ## Preprocessing
 ```bash
 sh preprocess.sh 
