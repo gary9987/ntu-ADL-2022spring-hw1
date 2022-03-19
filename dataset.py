@@ -54,7 +54,7 @@ class SeqClsDataset(Dataset):
                 #print('Error in collate_fn')
 
             if self.task == 'intent':
-                batch_str.append(sam['text'])
+                batch_str.append(sam['text'].split())
             elif self.task == 'slot':
                 batch_str.append(sam['tokens'])
                 original_len.append(len(sam['tokens']))
