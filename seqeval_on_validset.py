@@ -14,6 +14,17 @@ from seqeval.metrics import classification_report
 from seqeval.scheme import IOB2
 
 
+def joint_accuracy(pred: list, label: list):
+    correct = sum(list(map(lambda x, y: x == y, pred, label)))
+    return correct / len(pred)
+
+
+def token_accuracy(pred: list, label: list):
+    correct = sum(list(map(lambda x, y: sum(list(map(lambda i, j: i == j, x, y))), pred, label)))
+    length = sum(list(map(lambda x: len(x), pred)))
+    return correct / length
+
+
 def main(args):
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
         vocab: Vocab = pickle.load(f)
@@ -68,6 +79,8 @@ def main(args):
             tmp = [dataset.idx2label(tag.item()) for tag in labels[i]]
             label_list.append(tmp)
 
+    print('Joint Accuracy: ', joint_accuracy(pred_list, label_list))
+    print('Token Accuracy: ', token_accuracy(pred_list, label_list))
     print(classification_report(label_list, pred_list, mode='strict', scheme=IOB2))
 
 
